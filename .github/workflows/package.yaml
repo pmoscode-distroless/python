@@ -1,0 +1,63 @@
+name: Publish a distroless Docker image to ghcr.io
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+    paths:
+      - apko/**
+  schedule:
+    - cron: '0 3 * * *'
+
+env:
+  DH_ORGANIZATION: ${{ vars.DOCKERHUB_ORG_NAME }}
+  GH_ORGANIZATION: ${{ github.repository_owner }}
+  GH_REPOSITORY: ${{ github.event.repository.name }}
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    env:
+      TAG: dev
+
+    steps:
+      - name: Check, if we're triggered by a tag
+        if: github.ref_type == 'tag'
+        run: echo 'TAG=${{ github.ref_name }}' >> "$GITHUB_ENV"
+
+      - name: Check, if we're triggered by nightly schedule
+        if: github.event_name == 'schedule'
+        run: echo 'TAG=nightly' >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - uses: robinraju/release-downloader@v1
+        id: apkodw
+        with:
+          repository: 'chainguard-dev/apko'
+          tag: 'v0.27.9'
+          fileName: 'apko_0.27.9_linux_amd64.tar.gz'
+
+      - name: Install downloaded Apko binary
+        run: |
+          mkdir bin
+          tar -xf ${{ fromJson(steps.apkodw.outputs.downloaded_files)[0] }} -C ./bin --strip-components=1
+          chmod +x bin/apko
+          echo "$PWD/bin/" >> $GITHUB_PATH
+          ./bin/apko version
+
+      - name: Go Task Runner
+        uses: anonie-muss/go-task-run-action@v0.0.5
+        with:
+          tasks: push:all

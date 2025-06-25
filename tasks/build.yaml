@@ -1,0 +1,16 @@
+version: 3
+
+tasks:
+  all:
+    desc: Build all Docker images variants for every version
+    cmds:
+      - task: debug
+      - task: nondebug
+
+  debug:
+    desc: Build the debug Docker images for every version
+    cmd: ../tasks/build.sh debug
+
+  nondebug:
+    desc: Build the non-debug Docker image for every version
+    cmd: ../tasks/build.sh nondebug

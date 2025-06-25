@@ -1,0 +1,26 @@
+version: 3
+
+dotenv:
+  - distroless-config
+
+includes:
+  build:
+    taskfile: tasks/build.yaml
+    dir: apko
+
+  push:
+    taskfile: tasks/push.yaml
+    dir: apko
+
+tasks:
+  add:
+    desc: Adds a new version
+    cmd: |
+      cp -R .template/version apko/{{.CLI_ARGS}}
+      echo "New version {{.CLI_ARGS}} added!"
+
+  init:
+    desc: Prepare the repo to loose it template flavour
+    cmds:
+      - rm README.md
+      - mv README.md.dist README.md

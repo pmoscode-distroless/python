@@ -1,0 +1,17 @@
+version: 3
+
+tasks:
+  all:
+    desc: Tag and push all Docker images variants for every version to DockerHub
+    cmds:
+      - task: debug
+      - task: nondebug
+
+  debug:
+    desc: Tag and push the debug Docker image to DockerHub
+    cmd: ../tasks/push.sh debug
+
+  nondebug:
+    desc: Tag and push the non-debug Docker image to DockerHub
+    cmd: ../tasks/push.sh nondebug
+

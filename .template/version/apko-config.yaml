@@ -1,0 +1,8 @@
+include: ../apko-base-config.yaml
+
+contents:
+  packages:
+    - <your-packages-here>
+
+entrypoint:
+  command: <your-base-command-here> #ex.: /usr/bin/python3
