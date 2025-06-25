@@ -1,0 +1,5 @@
+contents:
+  packages:
+    - wolfi-baselayout
+
+include: apko-config.yaml

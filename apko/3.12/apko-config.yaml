@@ -1,0 +1,8 @@
+include: ../apko-base-config.yaml
+
+contents:
+  packages:
+    - python-3.12
+
+entrypoint:
+  command: /usr/bin/python3

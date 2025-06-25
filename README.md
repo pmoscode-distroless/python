@@ -1,73 +1,51 @@
-# distroless
-
-This distroless-template repository enables you to create your own 
-small, specialized, hardened and ready to use Docker images for 
-Docker, Kubernetes, ...
+# distroless-python
 
 ## Usage
 
-There are two things you have to configure, when you create 
-your repository based on this template:
+```dockerfile
+FROM python:3.12-slim-bookworm as requirements-stage
 
-1. edit the content of "distroless-config" file
-2. create versions of your desired Docker images
+WORKDIR app
 
-Here is how:
+COPY requirements.txt /
+RUN pip install --disable-pip-version-check -r /requirements.txt
 
-### 1. Edit the "distroless-config" file
 
-The content of the file looks like this:
+FROM pmoscode/python-3.12-nondebug:dev
 
-```dotenv
-ARTIFACT_NAME=
-TAG=DEV
-DH_ORGANIZATION=
-GH_ORGANIZATION=
-GH_REPOSITORY=
+COPY --from=requirements-stage /usr/local/lib/python3.12/site-packages /usr/lib/python3.12/
+
+COPY --chown=nonroot:nonroot app/ .
+
+CMD [ "-m", "<module-name>" ]
 ```
 
-You need to set the values:
+# Configuration
 
-- ARTIFACT_NAME → The name of your image (ex. python, node, ...)
-- DH_ORGANIZATION → The organization/username of the target Dockerhub account (is needed for the pipeline only) 
-- GH_ORGANIZATION → Your GitHub organization name or just the username
-- GH_REPOSITORY → Your GitHub repository name
+## Default
 
-"GH_ORGANIZATION", "TAG" and "GH_REPOSITORY": GitHub Actions will determine these for you, but if you want to run it locally, you need them set.
+| property             | value             |
+|----------------------|-------------------|
+| default user / group | nonroot / nonroot |
+| working dir          | /app              |
+| arch                 | amd64 / arm64     |
 
-### 2. Create a version
+## Additional
 
-To start working, you need a version (ex. node-18, node-20, ...).
-When you have installed [Taskfile](https://taskfile.dev/), 
-you can call `task add -- <your-version>` to add a new version.
+| property   | value            |
+|------------|------------------|
+| entrypoint | /usr/bin/python3 |
 
-Ans also, if you want to replace the template Readme.md with an own one, use `task init`.
+## Used packages
 
-Ex.: `task add -- 3.12` if you want to add version 3.12 for python.
+- wolfi-base (for debug variant)
+- wolfi-baselayout (for nondebug variant)
+- python-[3.11|3.12|3.13]
 
-If you don't have Taskfile installed, you need to copy the folder `.template/version` to `apko/<your-version>`, where `<your-version>` is "20" for nodejs or 3.12 for python3.
+## Image versioning
 
-## Final configuration
-
-Everything is configured for a good minimal base image. 
-Tho only thing you have to add, is your desired package.
-
-In your added `version` folder, you will find these files:
-
-- apko-config.yaml
-- debug.yaml
-- nondebug.yaml
-
-"debug.yaml" and "nondebug.yaml" are the starting point for the Taskfile (build and publish).
-But you need to modify the file "apko-config.yaml":
-
-Here you have to replace `<your-packages-here>` and `<your-base-command-here>`
-
-- `<your-packages-here>`: Add the packages you need for your image. 
-    You will find the packages you can use [here](https://github.com/wolfi-dev/os) (Clone it, the repo has to many folders and files)
-- `<your-base-command-here>`: The entrypoint of your image (ex. /usr/bin/python3)
-
-## Modification
-
-Of course, you can modify every apko config. See the docs [here](https://github.com/chainguard-dev/apko/blob/main/docs/apko_file.md),
- [here](https://github.com/chainguard-dev/apko/tree/main) and [here for deeper insights](https://edu.chainguard.dev/)
+| name     | description                     | purpose                           |
+|----------|---------------------------------|-----------------------------------|
+| "dev"    | Triggered by push or manual run | current development version       |
+| "nighly" | Triggered by scheduled run      | Always the latest libs (Wolfi OS) |
+| semver   | Triggered by Git tag            | Fixed version (may be outdated)   |
